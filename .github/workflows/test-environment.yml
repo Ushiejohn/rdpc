@@ -1,1 +1,46 @@
-name: Test Environment\n\non: [workflow_dispatch]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Start 6-hour timer\n        run: |\n          echo "Environment will run for 6 hours."\n          for ((i=1; i<=12; i++)); do\n            echo "Logging status update: Hour $i";\n            sleep 1800;  # Wait for 30 minutes\n          done\n          echo "6-hour test environment has ended."\n\n      - name: Final status\n        run: echo "Environment stopped after 6 hours."\n
+name: Test Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_minutes:
+        description: 'Test duration in minutes (default: 360 for 6 hours)'
+        required: false
+        default: '360'
+
+jobs:
+  test-environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start environment
+        run: |
+          echo "Starting 6-hour test environment..."
+          echo "GitHub Actions workflow started at: $(date)"
+          echo "Environment will run until: $(date -d '+6 hours')"
+          echo ""
+          echo "Workflow Status: RUNNING"
+
+      - name: Environment Active - Log Status
+        run: |
+          for i in {1..12}; do
+            sleep 1800
+            echo "[$(date)] Status Update #$i: Environment active. Hours elapsed: $((i/2))"
+          done
+
+      - name: Environment Complete
+        if: success()
+        run: |
+          echo ""
+          echo "✅ 6-hour test environment has completed successfully!"
+          echo "Ended at: $(date)"
+          echo "Workflow Status: COMPLETED"
+
+      - name: Failed Status
+        if: failure()
+        run: |
+          echo "❌ Test environment encountered an error"
+          echo "Failed at: $(date)",
